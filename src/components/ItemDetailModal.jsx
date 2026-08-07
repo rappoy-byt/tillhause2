@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Minus, Check, MessageSquare } from 'lucide-react';
+import { X, Plus, Minus, Check } from 'lucide-react';
 import { useCartStore } from '../store/useCartStore';
+
+const QUICK_NOTE_CHIPS = [
+  'Pisahkan Saus',
+  'Ekstra Pedas',
+  'Sedikit Es',
+  'Tanpa Gula',
+  'Bungkus Rapi'
+];
 
 export default function ItemDetailModal({ item, isOpen, onClose }) {
   const { addItem } = useCartStore();
@@ -31,6 +39,14 @@ export default function ItemDetailModal({ item, isOpen, onClose }) {
       setSelectedToppings(selectedToppings.filter(t => t.id !== topping.id));
     } else {
       setSelectedToppings([...selectedToppings, topping]);
+    }
+  };
+
+  const addQuickNote = (chipText) => {
+    if (!notes) {
+      setNotes(chipText);
+    } else if (!notes.includes(chipText)) {
+      setNotes(`${notes}, ${chipText}`);
     }
   };
 
@@ -66,159 +82,96 @@ export default function ItemDetailModal({ item, isOpen, onClose }) {
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-        {/* Backdrop */}
+        {/* Soft Translucent Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/70 backdrop-blur-xs"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm"
         />
 
-        {/* Modal Bottom Sheet */}
+        {/* Minimalist White Bottom Sheet / Modal */}
         <motion.div
-          initial={{ y: '100%' }}
-          animate={{ y: 0 }}
-          exit={{ y: '100%' }}
-          transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-          className="relative w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl overflow-hidden max-h-[90vh] flex flex-col z-10 shadow-2xl text-slate-900"
+          initial={{ y: '100%', opacity: 0.5 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: '100%', opacity: 0 }}
+          transition={{ type: 'spring', damping: 28, stiffness: 340 }}
+          className="relative w-full max-w-md bg-white rounded-t-[32px] sm:rounded-[32px] overflow-hidden max-h-[92vh] flex flex-col z-10 shadow-2xl text-slate-900 border border-slate-100"
         >
-          {/* Drag Handle */}
-          <div className="w-10 h-1 bg-slate-300 rounded-full mx-auto mt-2.5 mb-1 shrink-0" />
+          {/* Top Handle */}
+          <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-3 mb-1 shrink-0" />
 
-          {/* Header Image & Floating Close */}
-          <div className="relative h-48 w-full shrink-0 bg-slate-100 border-b border-slate-200">
+          {/* Hero Header Area */}
+          <div className="relative h-48 w-full shrink-0 overflow-hidden bg-slate-100">
             <img
               src={item.image}
               alt={item.name}
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/30" />
+            {/* Soft Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/20" />
 
+            {/* Floating Close Button */}
             <button
               onClick={onClose}
-              className="absolute top-3 right-3 w-8 h-8 bg-black/60 text-white rounded-full flex items-center justify-center hover:bg-black transition-colors"
+              className="absolute top-3 right-3 w-8 h-8 bg-white/90 text-slate-700 hover:text-slate-900 rounded-full flex items-center justify-center shadow-md border border-slate-200/60 active:scale-90 transition-all"
+              aria-label="Tutup"
             >
               <X className="w-4 h-4" />
             </button>
+          </div>
 
-            <div className="absolute bottom-3 left-4 right-4 space-y-0.5">
-              <div className="flex items-center gap-1.5">
-                {item.badges?.map((b, i) => (
-                  <span key={i} className="bg-[#FF5500] text-white font-black text-[9px] px-2 py-0.5 rounded uppercase">
-                    {b}
-                  </span>
-                ))}
-              </div>
-              <h2 className="text-base font-extrabold text-slate-900 uppercase font-display leading-tight">{item.name}</h2>
+          {/* Header Title & Price Info */}
+          <div className="px-5 pt-3 pb-2 border-b border-slate-100 flex items-start justify-between">
+            <div className="space-y-0.5">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#FF5A00] bg-[#FFF5EE] px-2 py-0.5 rounded-md border border-[#FF5A00]/20">
+                {item.category?.toUpperCase() || 'NIHLOH SPECIAL'}
+              </span>
+              <h2 className="text-xl font-black text-slate-900 font-display tracking-tight leading-snug">
+                {item.name}
+              </h2>
+            </div>
+
+            <div className="text-right">
+              <span className="text-[9px] font-bold text-slate-400 block uppercase tracking-wider">Harga</span>
+              <span className="text-lg font-black text-[#FF5A00]">
+                {formatIDR(item.price)}
+              </span>
             </div>
           </div>
 
-          {/* Options Content */}
-          <div className="p-4 space-y-4 overflow-y-auto flex-1 no-scrollbar">
-            <p className="text-xs text-slate-500 leading-relaxed font-medium">
+          {/* Options & Detail Scrollable Content */}
+          <div className="p-5 space-y-5 overflow-y-auto flex-1 no-scrollbar bg-slate-50/50">
+            {/* Description Card */}
+            <p className="text-xs text-slate-600 leading-relaxed font-medium bg-white p-3.5 rounded-2xl border border-slate-100 shadow-xs">
               {item.description}
             </p>
 
             {/* Suhu Penyajian */}
             {item.temperatureOptions?.length > 0 && (
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-800 uppercase tracking-wider block">
-                  Suhu Penyajian
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                    Suhu Penyajian
+                  </label>
+                  <span className="text-[10px] font-bold text-[#FF5A00] bg-[#FFF5EE] px-2 py-0.5 rounded-md border border-[#FF5A00]/20">Wajib</span>
+                </div>
                 <div className="grid grid-cols-2 gap-2">
-                  {item.temperatureOptions.map((temp) => (
-                    <button
-                      key={temp}
-                      type="button"
-                      onClick={() => setSelectedTemp(temp)}
-                      className={`py-2 px-3 rounded-xl border text-xs font-extrabold transition-all flex items-center justify-center gap-2 ${selectedTemp === temp
-                          ? 'bg-[#FFF6F0] text-[#FF5500] border-[#FF5500] shadow-xs'
-                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                        }`}
-                    >
-                      <span>{temp}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Level Manis */}
-            {item.sugarOptions?.length > 0 && (
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-800 uppercase tracking-wider block">
-                  Level Manis (Sugar)
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {item.sugarOptions.map((sugar) => (
-                    <button
-                      key={sugar}
-                      type="button"
-                      onClick={() => setSelectedSugar(sugar)}
-                      className={`py-2 px-2 rounded-xl border text-xs font-extrabold text-center transition-all ${selectedSugar === sugar
-                          ? 'bg-[#FFF6F0] text-[#FF5500] border-[#FF5500] shadow-xs'
-                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                        }`}
-                    >
-                      {sugar}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Level Es */}
-            {item.iceOptions?.length > 0 && selectedTemp !== 'Hot' && (
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-800 uppercase tracking-wider block">
-                  Jumlah Es (Ice Level)
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {item.iceOptions.map((ice) => (
-                    <button
-                      key={ice}
-                      type="button"
-                      onClick={() => setSelectedIce(ice)}
-                      className={`py-2 px-2 rounded-xl border text-xs font-extrabold text-center transition-all ${selectedIce === ice
-                          ? 'bg-[#FFF6F0] text-[#FF5500] border-[#FF5500] shadow-xs'
-                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                        }`}
-                    >
-                      {ice}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Topping Tambahan */}
-            {item.toppingOptions?.length > 0 && (
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-800 uppercase tracking-wider block">
-                  Topping / Add-on
-                </label>
-                <div className="space-y-1.5">
-                  {item.toppingOptions.map((topping) => {
-                    const isChecked = selectedToppings.some(t => t.id === topping.id);
+                  {item.temperatureOptions.map((temp) => {
+                    const isSelected = selectedTemp === temp;
                     return (
                       <button
-                        key={topping.id}
+                        key={temp}
                         type="button"
-                        onClick={() => toggleTopping(topping)}
-                        className={`w-full p-2.5 rounded-xl border text-xs font-bold flex items-center justify-between transition-all ${isChecked
-                            ? 'bg-[#FFF6F0] text-[#FF5500] border-[#FF5500]'
-                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                          }`}
+                        onClick={() => setSelectedTemp(temp)}
+                        className={`py-2.5 px-3 rounded-2xl text-xs font-extrabold text-center transition-all ${
+                          isSelected
+                            ? 'bg-[#FFF5EE] text-[#FF5A00] border-2 border-[#FF5A00] shadow-xs scale-[1.02]'
+                            : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                        }`}
                       >
-                        <div className="flex items-center gap-2">
-                          <div className={`w-4 h-4 rounded flex items-center justify-center border ${isChecked ? 'bg-[#FF5500] border-[#FF5500] text-white' : 'border-slate-300 bg-white'
-                            }`}>
-                            {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
-                          </div>
-                          <span>{topping.name}</span>
-                        </div>
-                        <span className="font-extrabold text-slate-900">+ {formatIDR(topping.price)}</span>
+                        {temp}
                       </button>
                     );
                   })}
@@ -226,50 +179,173 @@ export default function ItemDetailModal({ item, isOpen, onClose }) {
               </div>
             )}
 
-            {/* Catatan Khusus */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                <MessageSquare className="w-3.5 h-3.5 text-[#FF5500]" />
-                Catatan Khusus Barista
+            {/* Level Manis */}
+            {item.sugarOptions?.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                    Level Manis (Sugar)
+                  </label>
+                  <span className="text-[10px] font-bold text-[#FF5A00] bg-[#FFF5EE] px-2 py-0.5 rounded-md border border-[#FF5A00]/20">Wajib</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {item.sugarOptions.map((sugar) => {
+                    const isSelected = selectedSugar === sugar;
+                    return (
+                      <button
+                        key={sugar}
+                        type="button"
+                        onClick={() => setSelectedSugar(sugar)}
+                        className={`py-2.5 px-2 rounded-2xl text-xs text-center transition-all ${
+                          isSelected
+                            ? 'bg-[#FFF5EE] text-[#FF5A00] border-2 border-[#FF5A00] font-black shadow-xs scale-[1.02]'
+                            : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 font-extrabold'
+                        }`}
+                      >
+                        {sugar}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Level Es */}
+            {item.iceOptions?.length > 0 && selectedTemp !== 'Hot' && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                    Jumlah Es (Ice Level)
+                  </label>
+                  <span className="text-[10px] font-bold text-[#FF5A00] bg-[#FFF5EE] px-2 py-0.5 rounded-md border border-[#FF5A00]/20">Wajib</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {item.iceOptions.map((ice) => {
+                    const isSelected = selectedIce === ice;
+                    return (
+                      <button
+                        key={ice}
+                        type="button"
+                        onClick={() => setSelectedIce(ice)}
+                        className={`py-2.5 px-2 rounded-2xl text-xs text-center transition-all ${
+                          isSelected
+                            ? 'bg-[#FFF5EE] text-[#FF5A00] border-2 border-[#FF5A00] font-black shadow-xs scale-[1.02]'
+                            : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 font-extrabold'
+                        }`}
+                      >
+                        {ice}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Topping / Add-on Options */}
+            {item.toppingOptions?.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                    Topping & Add-On
+                  </label>
+                  <span className="text-[10px] font-bold text-slate-500 bg-slate-200/70 px-2 py-0.5 rounded-md">Opsional</span>
+                </div>
+                <div className="space-y-2">
+                  {item.toppingOptions.map((topping) => {
+                    const isChecked = selectedToppings.some(t => t.id === topping.id);
+                    return (
+                      <button
+                        key={topping.id}
+                        type="button"
+                        onClick={() => toggleTopping(topping)}
+                        className={`w-full p-3 rounded-2xl border text-xs font-extrabold flex items-center justify-between transition-all ${
+                          isChecked
+                            ? 'bg-[#FFF5EE] border-2 border-[#FF5A00] text-slate-900 shadow-xs'
+                            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-5 h-5 rounded-lg flex items-center justify-center border transition-colors ${
+                            isChecked ? 'bg-[#FF5A00] border-[#FF5A00] text-white' : 'border-slate-300 bg-slate-50'
+                          }`}>
+                            {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                          </div>
+                          <span>{topping.name}</span>
+                        </div>
+                        <span className="font-black text-[#FF5A00] bg-[#FF5A00]/10 px-2 py-1 rounded-lg text-xs">
+                          + {formatIDR(topping.price)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Catatan Khusus Barista */}
+            <div className="space-y-2 pt-1">
+              <label className="text-xs font-black text-slate-800 uppercase tracking-wider block">
+                Catatan Khusus Pesanan
               </label>
+
+              {/* Quick suggestion chips */}
+              <div className="flex flex-wrap gap-1.5 pb-1">
+                {QUICK_NOTE_CHIPS.map((chip, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => addQuickNote(chip)}
+                    className="text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 px-2.5 py-1 rounded-xl border border-slate-200/70 transition-colors"
+                  >
+                    {chip}
+                  </button>
+                ))}
+              </div>
+
               <input
                 type="text"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Contoh: Pisahkan es, sedikit gula..."
-                className="w-full bg-slate-50 border border-slate-200 focus:border-[#FF5500] rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 outline-none"
+                placeholder="Tulis catatan (misal: pisahkan saus, jangan pedas)..."
+                className="w-full bg-white border border-slate-200 focus:border-[#FF5A00] focus:ring-2 focus:ring-[#FF5A00]/20 rounded-2xl px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition-all shadow-xs"
               />
             </div>
           </div>
 
-          {/* Action Bar */}
-          <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center gap-3 shrink-0">
-            <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 shrink-0">
+          {/* Sticky Bottom Action Bar */}
+          <div className="p-4 bg-white/95 backdrop-blur-md border-t border-slate-100 flex items-center gap-3 shrink-0 shadow-lg">
+            {/* Quantity Stepper */}
+            <div className="flex items-center bg-slate-100 border border-slate-200 rounded-2xl p-1 shrink-0">
               <button
                 type="button"
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-slate-900"
+                className="w-8 h-8 rounded-xl bg-white hover:bg-slate-50 text-slate-700 flex items-center justify-center active:scale-90 transition-all shadow-xs"
+                aria-label="Kurangi jumlah"
               >
                 <Minus className="w-3.5 h-3.5 stroke-[3]" />
               </button>
-              <span className="w-8 text-center text-xs font-black text-slate-900">
+              <span className="w-8 text-center text-sm font-black text-slate-900">
                 {quantity}
               </span>
               <button
                 type="button"
                 onClick={() => setQuantity(quantity + 1)}
-                className="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-slate-900"
+                className="w-8 h-8 rounded-xl bg-[#FF5A00] hover:bg-[#E55000] text-white flex items-center justify-center active:scale-90 transition-all shadow-sm"
+                aria-label="Tambah jumlah"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[3]" />
               </button>
             </div>
 
+            {/* Add to Cart CTA Button */}
             <button
               onClick={handleAddToCart}
-              className="flex-1 bg-[#FF5500] text-white font-black text-xs py-3.5 px-4 rounded-xl flex items-center justify-between shadow-md active:scale-95 transition-all"
+              className="flex-1 bg-[#FF5A00] hover:bg-[#E55000] active:scale-[0.98] text-white font-black text-xs sm:text-sm py-3.5 px-4 rounded-2xl flex items-center justify-between shadow-lg shadow-orange-500/25 transition-all"
             >
               <span>Tambah ke Pesanan</span>
-              <span>{formatIDR(calculateTotalPrice())}</span>
+              <span className="bg-black/15 px-2.5 py-1 rounded-xl text-white font-black text-xs">
+                {formatIDR(calculateTotalPrice())}
+              </span>
             </button>
           </div>
         </motion.div>
@@ -277,3 +353,6 @@ export default function ItemDetailModal({ item, isOpen, onClose }) {
     </AnimatePresence>
   );
 }
+
+
+

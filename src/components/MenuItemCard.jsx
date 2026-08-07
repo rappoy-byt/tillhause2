@@ -24,8 +24,8 @@ export default function MenuItemCard({ item, onSelectItem }) {
     quickUpdateQuantity(item, 1);
   };
 
-  // Filter out any unwanted artificial badges like 'PAKET HEMAT'
-  const displayBadge = item.badges?.find(b => b !== 'PAKET HEMAT');
+  // Filter out unwanted badges like 'PAKET HEMAT' and 'BEST SELLER'
+  const displayBadge = item.badges?.find(b => b !== 'PAKET HEMAT' && b !== 'BEST SELLER');
 
   return (
     <div
