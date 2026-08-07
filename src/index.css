@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
+    background-color: #0D0D0E;
+    color: #F8FAFC;
+  }
+}
+
+/* NihLoh Signature Orange Palette Variables */
+:root {
+  --color-brand-orange: #FF5500;
+  --color-brand-orange-light: #FF6B00;
+  --color-brand-orange-dark: #E04800;
+  --color-brand-orange-tint: #FFF6F0;
+  --color-brand-orange-border: #FFD4C2;
+}
+
+.bg-brand-orange { background-color: #FF5500; }
+.bg-brand-orange-light { background-color: #FF6B00; }
+.bg-brand-orange-tint { background-color: #FFF6F0; }
+
+.text-brand-orange { color: #FF5500; }
+
+.border-brand-orange { border-color: #FF5500; }
+.border-brand-orange-border { border-color: #FFD4C2; }
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 9999px;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Clean Micro Touch Ripple */
+.active-press:active {
+  transform: scale(0.97);
+  transition: transform 0.1s ease;
+}
