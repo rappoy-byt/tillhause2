@@ -1,39 +1,37 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useCartStore } from '../store/useCartStore';
 import { MENU_ITEMS } from '../data/menuData';
 
 export default function DynamicBanner({ onSelectItem }) {
-  const { addItem } = useCartStore();
   const [activeSlide, setActiveSlide] = useState(0);
 
   const promoBanners = [
     {
       id: 'banner-1',
-      title: 'CHICKEN POP TERIYAKI',
-      subtitle: 'Ayam crispy renyah + Saus Teriyaki khas NihLoh',
-      price: 25000,
+      title: 'DIRTY LATTE',
+      subtitle: 'Susu dingin kental manis berlapis espresso panas pekat murni khas Tile Hause',
+      price: 36000,
       badge: 'BEST SELLER',
-      item: MENU_ITEMS[0],
-      image: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=1000&q=80'
+      item: MENU_ITEMS.find(i => i.name === 'Dirty Latte') || MENU_ITEMS[0],
+      image: 'https://images.unsplash.com/photo-1589396575653-c09c794ff6a6?auto=format&fit=crop&w=1000&q=80'
     },
     {
       id: 'banner-2',
-      title: 'KATSU SAMBAL MATAH',
-      subtitle: 'Chicken Katsu tebal disiram Sambal Matah serai segar',
-      price: 25000,
-      badge: 'HEAD MENU',
-      item: MENU_ITEMS[5],
-      image: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=1000&q=80'
+      title: 'CHICKEN TERIYAKI RICE BOWL',
+      subtitle: 'Daging ayam crispy saus teriyaki gurih manis bertabur wijen',
+      price: 30000,
+      badge: 'CHEF RECOMMEND',
+      item: MENU_ITEMS.find(i => i.name === 'Chicken Teriyaki') || MENU_ITEMS[1],
+      image: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=1000&q=80'
     },
     {
       id: 'banner-3',
-      title: 'BEEF TERIYAKI SIGNATURE',
-      subtitle: 'Irisan daging sapi empuk tumis teriyaki & bombay',
-      price: 28000,
-      badge: 'RECOMMENDED',
-      item: MENU_ITEMS[10],
-      image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1000&q=80'
+      title: 'CEREMONIAL MATCHA',
+      subtitle: 'Ceremonial matcha grade tertinggi diseduh dengan susu segar kaya umami',
+      price: 35000,
+      badge: 'CEREMONIAL GRADE',
+      item: MENU_ITEMS.find(i => i.name === 'Ceremonial Matcha') || MENU_ITEMS[2],
+      image: 'https://images.unsplash.com/photo-1515823689205-d368819d9b6c?auto=format&fit=crop&w=1000&q=80'
     }
   ];
 
@@ -57,6 +55,8 @@ export default function DynamicBanner({ onSelectItem }) {
     setActiveSlide((prev) => (prev - 1 + promoBanners.length) % promoBanners.length);
   };
 
+  if (!currentBanner) return null;
+
   return (
     <div className="w-full bg-[#121214] relative overflow-hidden border-b border-slate-200">
       {/* Full Width Edge-to-Edge Banner Container */}
@@ -67,7 +67,7 @@ export default function DynamicBanner({ onSelectItem }) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          onClick={() => onSelectItem(currentBanner.item)}
+          onClick={() => currentBanner.item && onSelectItem(currentBanner.item)}
           className="relative w-full h-44 sm:h-52 cursor-pointer group"
         >
           {/* Edge-to-Edge Image */}
@@ -79,8 +79,8 @@ export default function DynamicBanner({ onSelectItem }) {
 
           {/* Dark Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-transparent flex items-center px-4 sm:px-6">
-            <div className="space-y-1.5 max-w-[70%] text-white">
-              <span className="inline-block bg-[#FF5A00] text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider shadow-xs">
+            <div className="space-y-1.5 max-w-[75%] text-white">
+              <span className="inline-block bg-slate-900 text-white border border-slate-700 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider shadow-xs">
                 {currentBanner.badge}
               </span>
 
@@ -93,23 +93,12 @@ export default function DynamicBanner({ onSelectItem }) {
               </p>
 
               <div className="flex items-center gap-2 pt-1">
-                <span className="text-sm font-black text-[#FF5A00]">
+                <span className="text-sm font-black text-white bg-white/20 px-2 py-0.5 rounded-lg">
                   {formatIDR(currentBanner.price)}
                 </span>
               </div>
             </div>
           </div>
-
-          {/* Quick Add Button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              addItem(currentBanner.item);
-            }}
-            className="absolute bottom-3 right-4 bg-[#FF5A00] text-white font-black text-xs px-3.5 py-1.5 rounded-xl shadow-md flex items-center justify-center active:scale-95 transition-transform border border-white/30"
-          >
-            <span>+ Tambah</span>
-          </button>
 
           {/* Manual Arrow Controls */}
           <button
@@ -137,7 +126,7 @@ export default function DynamicBanner({ onSelectItem }) {
               setActiveSlide(idx);
             }}
             className={`w-2 h-2 rounded-full transition-all ${
-              activeSlide === idx ? 'bg-[#FF5A00] w-4' : 'bg-white/50'
+              activeSlide === idx ? 'bg-white w-4' : 'bg-white/40'
             }`}
           />
         ))}

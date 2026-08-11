@@ -9,23 +9,23 @@
   }
 }
 
-/* NihLoh Signature Orange Palette Variables */
+/* Tile Hause Signature Soft Palette Variables */
 :root {
-  --color-brand-orange: #FF5500;
-  --color-brand-orange-light: #FF6B00;
-  --color-brand-orange-dark: #E04800;
-  --color-brand-orange-tint: #FFF6F0;
-  --color-brand-orange-border: #FFD4C2;
+  --color-brand-accent: #2B2E34;
+  --color-brand-light: #4A4E57;
+  --color-brand-dark: #1E2024;
+  --color-brand-tint: #F3F4F6;
+  --color-brand-border: #E5E7EB;
 }
 
-.bg-brand-orange { background-color: #FF5500; }
-.bg-brand-orange-light { background-color: #FF6B00; }
-.bg-brand-orange-tint { background-color: #FFF6F0; }
+.bg-brand-accent { background-color: #2B2E34; }
+.bg-brand-light { background-color: #4A4E57; }
+.bg-brand-tint { background-color: #F3F4F6; }
 
-.text-brand-orange { color: #FF5500; }
+.text-brand-accent { color: #2B2E34; }
 
-.border-brand-orange { border-color: #FF5500; }
-.border-brand-orange-border { border-color: #FFD4C2; }
+.border-brand-accent { border-color: #2B2E34; }
+.border-brand-border { border-color: #E5E7EB; }
 
 /* Custom Scrollbars */
 ::-webkit-scrollbar {

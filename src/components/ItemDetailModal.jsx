@@ -15,6 +15,7 @@ export default function ItemDetailModal({ item, isOpen, onClose }) {
   const { addItem } = useCartStore();
 
   const [quantity, setQuantity] = useState(1);
+  const [selectedBean, setSelectedBean] = useState(null);
   const [selectedTemp, setSelectedTemp] = useState('');
   const [selectedSugar, setSelectedSugar] = useState('');
   const [selectedIce, setSelectedIce] = useState('');
@@ -24,6 +25,7 @@ export default function ItemDetailModal({ item, isOpen, onClose }) {
   useEffect(() => {
     if (item) {
       setQuantity(1);
+      setSelectedBean(item.beanOptions?.[0] || null);
       setSelectedTemp(item.temperatureOptions?.[0] || '');
       setSelectedSugar(item.sugarOptions?.[0] || '');
       setSelectedIce(item.iceOptions?.[0] || '');
@@ -51,8 +53,9 @@ export default function ItemDetailModal({ item, isOpen, onClose }) {
   };
 
   const calculateUnitPrice = () => {
+    const beanPrice = selectedBean ? selectedBean.price : 0;
     const toppingTotal = selectedToppings.reduce((acc, t) => acc + t.price, 0);
-    return item.price + toppingTotal;
+    return item.price + beanPrice + toppingTotal;
   };
 
   const calculateTotalPrice = () => {
@@ -70,6 +73,7 @@ export default function ItemDetailModal({ item, isOpen, onClose }) {
   const handleAddToCart = () => {
     addItem(item, {
       quantity,
+      selectedBean,
       selectedTemp,
       selectedSugar,
       selectedIce,
@@ -125,8 +129,8 @@ export default function ItemDetailModal({ item, isOpen, onClose }) {
           {/* Header Title & Price Info */}
           <div className="px-5 pt-3 pb-2 border-b border-slate-100 flex items-start justify-between">
             <div className="space-y-0.5">
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#FF5A00] bg-[#FFF5EE] px-2 py-0.5 rounded-md border border-[#FF5A00]/20">
-                {item.category?.toUpperCase() || 'NIHLOH SPECIAL'}
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-300">
+                {item.category?.toUpperCase() || 'TILE HAUSE SPECIAL'}
               </span>
               <h2 className="text-xl font-black text-slate-900 font-display tracking-tight leading-snug">
                 {item.name}
@@ -135,7 +139,7 @@ export default function ItemDetailModal({ item, isOpen, onClose }) {
 
             <div className="text-right">
               <span className="text-[9px] font-bold text-slate-400 block uppercase tracking-wider">Harga</span>
-              <span className="text-lg font-black text-[#FF5A00]">
+              <span className="text-lg font-black text-slate-900">
                 {formatIDR(item.price)}
               </span>
             </div>
@@ -148,6 +152,41 @@ export default function ItemDetailModal({ item, isOpen, onClose }) {
               {item.description}
             </p>
 
+            {/* Pilihan Biji Kopi (Beans) */}
+            {item.beanOptions?.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                    Pilihan Biji Kopi (Beans)
+                  </label>
+                  <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">Wajib</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {item.beanOptions.map((bean) => {
+                    const isSelected = selectedBean?.id === bean.id;
+                    const finalPrice = item.price + bean.price;
+                    return (
+                      <button
+                        key={bean.id}
+                        type="button"
+                        onClick={() => setSelectedBean(bean)}
+                        className={`py-2.5 px-3 rounded-2xl text-xs font-extrabold text-center transition-all ${
+                          isSelected
+                            ? 'bg-slate-900 text-white border-2 border-slate-900 shadow-xs scale-[1.02]'
+                            : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="uppercase tracking-wider">{bean.name}</div>
+                        <div className={`text-[10px] font-black mt-0.5 ${isSelected ? 'text-slate-200' : 'text-slate-500'}`}>
+                          {formatIDR(finalPrice)}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Suhu Penyajian */}
             {item.temperatureOptions?.length > 0 && (
               <div className="space-y-2">
@@ -155,7 +194,7 @@ export default function ItemDetailModal({ item, isOpen, onClose }) {
                   <label className="text-xs font-black text-slate-800 uppercase tracking-wider">
                     Suhu Penyajian
                   </label>
-                  <span className="text-[10px] font-bold text-[#FF5A00] bg-[#FFF5EE] px-2 py-0.5 rounded-md border border-[#FF5A00]/20">Wajib</span>
+                  <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">Wajib</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {item.temperatureOptions.map((temp) => {
@@ -167,7 +206,7 @@ export default function ItemDetailModal({ item, isOpen, onClose }) {
                         onClick={() => setSelectedTemp(temp)}
                         className={`py-2.5 px-3 rounded-2xl text-xs font-extrabold text-center transition-all ${
                           isSelected
-                            ? 'bg-[#FFF5EE] text-[#FF5A00] border-2 border-[#FF5A00] shadow-xs scale-[1.02]'
+                            ? 'bg-slate-900 text-white border-2 border-slate-900 shadow-xs scale-[1.02]'
                             : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
                         }`}
                       >
@@ -186,7 +225,7 @@ export default function ItemDetailModal({ item, isOpen, onClose }) {
                   <label className="text-xs font-black text-slate-800 uppercase tracking-wider">
                     Level Manis (Sugar)
                   </label>
-                  <span className="text-[10px] font-bold text-[#FF5A00] bg-[#FFF5EE] px-2 py-0.5 rounded-md border border-[#FF5A00]/20">Wajib</span>
+                  <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">Wajib</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {item.sugarOptions.map((sugar) => {
@@ -198,7 +237,7 @@ export default function ItemDetailModal({ item, isOpen, onClose }) {
                         onClick={() => setSelectedSugar(sugar)}
                         className={`py-2.5 px-2 rounded-2xl text-xs text-center transition-all ${
                           isSelected
-                            ? 'bg-[#FFF5EE] text-[#FF5A00] border-2 border-[#FF5A00] font-black shadow-xs scale-[1.02]'
+                            ? 'bg-slate-900 text-white border-2 border-slate-900 font-black shadow-xs scale-[1.02]'
                             : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 font-extrabold'
                         }`}
                       >
@@ -217,7 +256,7 @@ export default function ItemDetailModal({ item, isOpen, onClose }) {
                   <label className="text-xs font-black text-slate-800 uppercase tracking-wider">
                     Jumlah Es (Ice Level)
                   </label>
-                  <span className="text-[10px] font-bold text-[#FF5A00] bg-[#FFF5EE] px-2 py-0.5 rounded-md border border-[#FF5A00]/20">Wajib</span>
+                  <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">Wajib</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {item.iceOptions.map((ice) => {
@@ -229,7 +268,7 @@ export default function ItemDetailModal({ item, isOpen, onClose }) {
                         onClick={() => setSelectedIce(ice)}
                         className={`py-2.5 px-2 rounded-2xl text-xs text-center transition-all ${
                           isSelected
-                            ? 'bg-[#FFF5EE] text-[#FF5A00] border-2 border-[#FF5A00] font-black shadow-xs scale-[1.02]'
+                            ? 'bg-slate-900 text-white border-2 border-slate-900 font-black shadow-xs scale-[1.02]'
                             : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 font-extrabold'
                         }`}
                       >
@@ -260,19 +299,19 @@ export default function ItemDetailModal({ item, isOpen, onClose }) {
                         onClick={() => toggleTopping(topping)}
                         className={`w-full p-3 rounded-2xl border text-xs font-extrabold flex items-center justify-between transition-all ${
                           isChecked
-                            ? 'bg-[#FFF5EE] border-2 border-[#FF5A00] text-slate-900 shadow-xs'
+                            ? 'bg-slate-100 border-2 border-slate-800 text-slate-900 shadow-xs'
                             : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                         }`}
                       >
                         <div className="flex items-center gap-2.5">
                           <div className={`w-5 h-5 rounded-lg flex items-center justify-center border transition-colors ${
-                            isChecked ? 'bg-[#FF5A00] border-[#FF5A00] text-white' : 'border-slate-300 bg-slate-50'
+                            isChecked ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-300 bg-slate-50'
                           }`}>
                             {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                           </div>
                           <span>{topping.name}</span>
                         </div>
-                        <span className="font-black text-[#FF5A00] bg-[#FF5A00]/10 px-2 py-1 rounded-lg text-xs">
+                        <span className="font-black text-slate-800 bg-slate-200 px-2 py-1 rounded-lg text-xs">
                           + {formatIDR(topping.price)}
                         </span>
                       </button>
@@ -307,7 +346,7 @@ export default function ItemDetailModal({ item, isOpen, onClose }) {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Tulis catatan (misal: pisahkan saus, jangan pedas)..."
-                className="w-full bg-white border border-slate-200 focus:border-[#FF5A00] focus:ring-2 focus:ring-[#FF5A00]/20 rounded-2xl px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition-all shadow-xs"
+                className="w-full bg-white border border-slate-200 focus:border-slate-800 focus:ring-2 focus:ring-slate-800/20 rounded-2xl px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 outline-none transition-all shadow-xs"
               />
             </div>
           </div>
@@ -330,7 +369,7 @@ export default function ItemDetailModal({ item, isOpen, onClose }) {
               <button
                 type="button"
                 onClick={() => setQuantity(quantity + 1)}
-                className="w-8 h-8 rounded-xl bg-[#FF5A00] hover:bg-[#E55000] text-white flex items-center justify-center active:scale-90 transition-all shadow-sm"
+                className="w-8 h-8 rounded-xl bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center active:scale-90 transition-all shadow-sm"
                 aria-label="Tambah jumlah"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[3]" />
@@ -340,7 +379,7 @@ export default function ItemDetailModal({ item, isOpen, onClose }) {
             {/* Add to Cart CTA Button */}
             <button
               onClick={handleAddToCart}
-              className="flex-1 bg-[#FF5A00] hover:bg-[#E55000] active:scale-[0.98] text-white font-black text-xs sm:text-sm py-3.5 px-4 rounded-2xl flex items-center justify-between shadow-lg shadow-orange-500/25 transition-all"
+              className="flex-1 bg-slate-900 hover:bg-slate-800 active:scale-[0.98] text-white font-black text-xs sm:text-sm py-3.5 px-4 rounded-2xl flex items-center justify-between shadow-lg shadow-slate-900/20 transition-all"
             >
               <span>Tambah ke Pesanan</span>
               <span className="bg-black/15 px-2.5 py-1 rounded-xl text-white font-black text-xs">

@@ -8,4 +8,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    host: true, // Akses via IP Lokal (Network Wi-Fi) dari HP
+  },
 })

@@ -29,10 +29,10 @@ export default function CartBottomBar() {
             exit={{ y: 50, opacity: 0 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => setIsCartOpen(true)}
-            className="w-full bg-[#FF5500] text-white p-3 rounded-2xl flex items-center justify-between font-black shadow-lg cursor-pointer active:scale-95 transition-all"
+            className="w-full bg-slate-900 text-white p-3 rounded-2xl flex items-center justify-between font-black shadow-lg cursor-pointer active:scale-95 transition-all"
           >
             <div className="flex items-center gap-3">
-              <div className="bg-white text-[#FF5500] w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm shadow-xs">
+              <div className="bg-white text-slate-900 w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm shadow-xs">
                 {totalCount}
               </div>
               <div className="text-left">

@@ -7,37 +7,53 @@ export const useCartStore = create((set, get) => ({
   tableNumber: '', // Strictly empty default so user must enter table number
   customerName: '', // Strictly empty default so user must enter customer name
   whatsappNumber: '',
-  
+
   appliedVoucher: null,
   voucherError: null,
 
   isCartOpen: false,
   isQrisModalOpen: false,
   isOrderSuccess: false,
+  isQrModalOpen: false,
+  isTableFromQr: false,
   lastOrderData: null,
 
   // Actions
   setIsCartOpen: (isOpen) => set({ isCartOpen: isOpen }),
   setIsQrisModalOpen: (isOpen) => set({ isQrisModalOpen: isOpen }),
   setIsOrderSuccess: (isSuccess) => set({ isOrderSuccess: isSuccess }),
+  setIsQrModalOpen: (isOpen) => set({ isQrModalOpen: isOpen }),
   setOrderType: (type) => set({ orderType: type }),
-  setTableNumber: (num) => set({ tableNumber: num }),
+  setTableNumber: (num) => set({ tableNumber: num, isTableFromQr: false }),
   setCustomerName: (name) => set({ customerName: name }),
   setWhatsappNumber: (num) => set({ whatsappNumber: num }),
+
+  initTableFromUrl: () => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const mejaParam = params.get('meja') || params.get('table') || params.get('t');
+      if (mejaParam) {
+        set({ tableNumber: mejaParam, isTableFromQr: true });
+      }
+    }
+  },
 
   addItem: (item, options = {}) => {
     set((state) => {
       const quantity = options.quantity || 1;
+      const selectedBean = options.selectedBean || (item.beanOptions?.[0] || null);
       const selectedTemp = options.selectedTemp || (item.temperatureOptions?.[0] || '');
       const selectedSugar = options.selectedSugar || (item.sugarOptions?.[0] || '');
       const selectedIce = options.selectedIce || (item.iceOptions?.[0] || '');
       const selectedToppings = options.selectedToppings || [];
       const notes = options.notes || '';
 
+      const beanPrice = selectedBean ? selectedBean.price : 0;
       const toppingPrice = selectedToppings.reduce((acc, t) => acc + t.price, 0);
-      const unitPrice = item.price + toppingPrice;
+      const unitPrice = item.price + beanPrice + toppingPrice;
 
-      const cartItemId = `${item.id}-${selectedTemp}-${selectedSugar}-${selectedIce}-${selectedToppings.map(t => t.id).sort().join(',')}`;
+      const beanIdStr = selectedBean ? selectedBean.id : '';
+      const cartItemId = `${item.id}-${beanIdStr}-${selectedTemp}-${selectedSugar}-${selectedIce}-${selectedToppings.map(t => t.id).sort().join(',')}`;
 
       const existingIndex = state.cart.findIndex(c => c.cartItemId === cartItemId);
 
@@ -54,6 +70,7 @@ export const useCartStore = create((set, get) => ({
               cartItemId,
               item,
               quantity,
+              selectedBean,
               selectedTemp,
               selectedSugar,
               selectedIce,
@@ -70,7 +87,7 @@ export const useCartStore = create((set, get) => ({
   quickUpdateQuantity: (item, delta) => {
     set((state) => {
       const existingItems = state.cart.filter(c => c.item.id === item.id);
-      
+
       if (existingItems.length === 0 && delta > 0) {
         // Add default item
         const defaultTemp = item.temperatureOptions?.[0] || '';
@@ -102,7 +119,7 @@ export const useCartStore = create((set, get) => ({
           return { cart: state.cart.filter(c => c.cartItemId !== targetItem.cartItemId) };
         } else {
           return {
-            cart: state.cart.map(c => 
+            cart: state.cart.map(c =>
               c.cartItemId === targetItem.cartItemId ? { ...c, quantity: newQty } : c
             )
           };
@@ -195,15 +212,20 @@ export const useCartStore = create((set, get) => ({
 
   checkoutOrder: (paymentMethod = 'QRIS') => {
     const state = get();
+    const now = new Date();
+    const formattedDate = `${now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
+
     const orderData = {
       orderId: `NL-${Math.floor(100000 + Math.random() * 900000)}`,
       customerName: state.customerName || 'Pelanggan',
       tableNumber: state.tableNumber || '-',
+      whatsappNumber: state.whatsappNumber || '',
       items: [...state.cart],
       total: state.getTotalPrice(),
       paymentMethod,
       orderType: state.orderType,
-      timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+      timestamp: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+      fullTimestamp: formattedDate
     };
 
     set({

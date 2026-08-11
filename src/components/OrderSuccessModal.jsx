@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, QrCode, RefreshCw } from 'lucide-react';
+import { CheckCircle2, QrCode, RefreshCw, Send } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useCartStore } from '../store/useCartStore';
 
@@ -28,6 +28,44 @@ export default function OrderSuccessModal() {
     }).format(num);
   };
 
+  const handleSendWhatsAppInvoice = () => {
+    if (!lastOrderData) return;
+
+    const formattedDate = lastOrderData.fullTimestamp || `${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${lastOrderData.timestamp}`;
+    
+    const itemsList = lastOrderData.items.map(entry => {
+      return `• ${entry.quantity}x ${entry.item.name} - ${formatIDR(entry.unitPrice * entry.quantity)}`;
+    }).join('\n');
+
+    const message = `🧾INVOICE PESANAN - NIH LOH CAFÉ
+----------------------------------
+ID Pesanan : ${lastOrderData.orderId}
+Waktu      : ${formattedDate}
+Pemesan    : ${lastOrderData.customerName}
+Nomor Meja : Meja ${lastOrderData.tableNumber}
+Status     : ${lastOrderData.paymentMethod} (LUNAS)
+
+DETAIL PESANAN:
+${itemsList}
+
+----------------------------------
+ TOTAL DIBAYAR: ${formatIDR(lastOrderData.total)}
+----------------------------------
+Terima kasih telah memesan di Tile Hause! 🙏`;
+
+    let targetPhone = (lastOrderData.whatsappNumber || '').replace(/\D/g, '');
+    if (targetPhone.startsWith('0')) {
+      targetPhone = '62' + targetPhone.slice(1);
+    }
+
+    const encodedMsg = encodeURIComponent(message);
+    const waUrl = targetPhone 
+      ? `https://wa.me/${targetPhone}?text=${encodedMsg}`
+      : `https://api.whatsapp.com/send?text=${encodedMsg}`;
+
+    window.open(waUrl, '_blank');
+  };
+
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -48,22 +86,22 @@ export default function OrderSuccessModal() {
           className="relative w-full max-w-sm bg-white rounded-3xl overflow-hidden shadow-2xl z-10 flex flex-col max-h-[90vh] text-slate-900"
         >
           {/* Header */}
-          <div className="p-6 text-center bg-gradient-to-b from-[#FFF6F0] to-white space-y-2 border-b border-slate-100">
+          <div className="p-6 text-center bg-slate-50 space-y-2 border-b border-slate-100">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.1, type: 'spring' }}
-              className="w-14 h-14 bg-[#FF5500] text-white rounded-full flex items-center justify-center mx-auto shadow-md"
+              className="w-14 h-14 bg-slate-900 text-white rounded-full flex items-center justify-center mx-auto shadow-md"
             >
               <CheckCircle2 className="w-9 h-9 stroke-[2.5]" />
             </motion.div>
 
             <h2 className="text-lg font-black text-slate-900 uppercase">Pesanan Berhasil</h2>
             <p className="text-xs text-slate-500 font-medium">
-              Pesanan sedang diproses oleh dapur NihLoh Café.
+              Pesanan sedang diproses oleh dapur Tile Hause.
             </p>
 
-            <div className="inline-block bg-[#FFF6F0] border border-[#FFD4C2] text-[#FF5500] text-xs font-black px-3 py-1 rounded-full">
+            <div className="inline-block bg-slate-100 border border-slate-300 text-slate-800 text-xs font-black px-3 py-1 rounded-full">
               ID Pesanan: {lastOrderData.orderId}
             </div>
           </div>
@@ -81,7 +119,7 @@ export default function OrderSuccessModal() {
 
                 {/* Step 1 */}
                 <div className="relative flex items-center gap-2">
-                  <div className="absolute -left-6 w-4 h-4 rounded-full bg-[#FF5500] text-white flex items-center justify-center font-black text-[9px]">
+                  <div className="absolute -left-6 w-4 h-4 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-[9px]">
                     ✓
                   </div>
                   <span className="font-extrabold text-slate-900">Pesanan Diterima</span>
@@ -132,18 +170,26 @@ export default function OrderSuccessModal() {
 
               <div className="pt-2 border-t border-slate-200 flex justify-between font-black text-slate-900 text-sm">
                 <span>Total Dibayar ({lastOrderData.paymentMethod})</span>
-                <span className="text-[#FF5500]">{formatIDR(lastOrderData.total)}</span>
+                <span className="text-slate-900">{formatIDR(lastOrderData.total)}</span>
               </div>
             </div>
           </div>
 
           {/* Action Footer */}
-          <div className="p-4 bg-slate-50 border-t border-slate-200">
+          <div className="p-4 bg-slate-50 border-t border-slate-200 space-y-2">
+            <button
+              onClick={handleSendWhatsAppInvoice}
+              className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-xs py-3.5 rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all"
+            >
+              <Send className="w-4 h-4 stroke-[2.5]" />
+              <span>Kirim Struk ke WhatsApp</span>
+            </button>
+
             <button
               onClick={() => setIsOrderSuccess(false)}
-              className="w-full bg-[#FF5500] text-white font-black text-xs py-3.5 rounded-xl shadow-xs flex items-center justify-center gap-2 active:scale-95 transition-all"
+              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs py-3.0 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all"
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className="w-3.5 h-3.5" />
               <span>Pesan Menu Lain</span>
             </button>
           </div>
