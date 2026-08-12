@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase, isSupabaseConfigured } from '../../supabaseClient';
-import { Download, Calendar, Filter } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';;import { Download, Calendar, Filter } from 'lucide-react';
 
 export default function AdminReports() {
   const [reportData, setReportData] = useState([]);

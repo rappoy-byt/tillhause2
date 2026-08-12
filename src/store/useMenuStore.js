@@ -1,6 +1,9 @@
 import { create } from 'zustand';
-import { supabase, isSupabaseConfigured } from '../supabaseClient';
+import { supabase } from '../lib/supabase';
 import { products as FALLBACK_MENU, CATEGORIES as FALLBACK_CATS } from '../data/menuData';
+
+let productsChannel = null;
+let categoriesChannel = null;
 
 export const useMenuStore = create((set, get) => ({
   menuItems: [],
@@ -8,91 +11,79 @@ export const useMenuStore = create((set, get) => ({
   isLoading: true,
   error: null,
 
+  // Alias untuk mempermudah pemanggilan dari komponen
+  fetchMenuItems: () => get().initRealtimeMenu(),
+
   initRealtimeMenu: async () => {
     set({ isLoading: true, error: null });
 
-    if (!isSupabaseConfigured) {
-      // Fallback if no Supabase configured
-      set({ 
-        menuItems: FALLBACK_MENU, 
-        categories: FALLBACK_CATS,
-        isLoading: false 
-      });
-      return;
-    }
-
     try {
-      // 1. Fetch Categories
+      // 1. Ambil Data Kategori
       const { data: catsData, error: catsError } = await supabase
         .from('categories')
         .select('*')
-        .order('display_order', { ascending: true });
+        .order('created_at', { ascending: true });
 
       if (catsError) throw catsError;
 
-      // Map to the format used in frontend (id, label)
-      const mappedCats = catsData.map(c => ({
-        id: c.id, // we might need to map ID to string or keep UUID. If uuid, we need to ensure activeCategory matches. 
-        // Wait, the frontend uses string IDs like 'hot-beverages'. 
-        // Let's assume the admin can set names. We'll map label to name.
-        // For compatibility with frontend activeCategory, we'll use a slugified name for id if needed, or just use the UUID.
-        // Let's use the DB id as the actual id, but label as name.
+      const mappedCats = (catsData || []).map((c) => ({
         id: c.id,
-        label: c.name
+        label: c.name,
       }));
 
-      // 2. Fetch Menu Items
+      // 2. Ambil Data Produk / Menu
       const { data: itemsData, error: itemsError } = await supabase
         .from('products')
-        .select('*');
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (itemsError) throw itemsError;
 
-      // Map to the format used in frontend
-      const mappedItems = itemsData.map(item => ({
+      const mappedItems = (itemsData || []).map((item) => ({
         id: item.id,
         name: item.name,
-        category: item.category_id, // Map category_id to category
+        category: item.category_id,
         price: Number(item.price),
         image: item.image_url || 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=800&q=80',
         description: item.description || '',
         badges: item.is_recommended ? ['Recommended'] : [],
-        isSoldOut: item.is_sold_out,
-        // Default options for coffee shop app compatibility
+        isSoldOut: item.is_available === false || item.is_sold_out === true,
+        is_available: item.is_available ?? !item.is_sold_out,
         temperatureOptions: ['Ice', 'Hot'],
         sugarOptions: ['Normal', 'Less Sugar', 'No Sugar'],
         iceOptions: ['Normal Ice', 'Less Ice', 'No Ice'],
         toppingOptions: []
       }));
 
-      // Set initial data
+      // Set data jika ada di database, jika belum ada gunakan fallback lokal
       set({ 
         categories: mappedCats.length > 0 ? mappedCats : FALLBACK_CATS, 
         menuItems: mappedItems.length > 0 ? mappedItems : FALLBACK_MENU, 
         isLoading: false 
       });
 
-      // 3. Setup Realtime Subscriptions
-      // Subscribe to products changes
-      const menuSub = supabase
-        .channel('public:products')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, payload => {
-          get().fetchMenuDataSilently(); // Re-fetch all to keep it simple, or update specific item
-        })
-        .subscribe();
+      // 3. Cleanup channel lama jika sudah aktif
+      if (productsChannel) await supabase.removeChannel(productsChannel);
+      if (categoriesChannel) await supabase.removeChannel(categoriesChannel);
 
-      // Subscribe to categories changes
-      const catSub = supabase
-        .channel('public:categories')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, payload => {
+      // 4. Setup Listener Realtime
+      productsChannel = supabase
+        .channel('realtime_products_store')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
           get().fetchMenuDataSilently();
         })
         .subscribe();
 
-      // We technically should save the subscription to remove it later, but Zustand stores are global.
+      // Fix Syntax Realtime Category
+      categoriesChannel = supabase
+        .channel('realtime_categories_store')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => {
+          get().fetchMenuDataSilently();
+        })
+        .subscribe();
+
     } catch (err) {
-      console.error("Error fetching menu from Supabase:", err);
-      // Fallback
+      console.error("Gagal mengambil menu dari Supabase:", err);
       set({ 
         menuItems: FALLBACK_MENU, 
         categories: FALLBACK_CATS,
@@ -102,17 +93,17 @@ export const useMenuStore = create((set, get) => ({
     }
   },
 
-  // Helper to re-fetch without showing loading spinner
+  // Helper fetch data di background tanpa trigger loading spinner
   fetchMenuDataSilently: async () => {
-    if (!isSupabaseConfigured) return;
     try {
-      const { data: catsData } = await supabase.from('categories').select('*').order('display_order', { ascending: true });
-      const { data: itemsData } = await supabase.from('products').select('*');
+      const { data: catsData } = await supabase.from('categories').select('*').order('created_at', { ascending: true });
+      const { data: itemsData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
       
-      if (catsData) {
+      if (catsData && catsData.length > 0) {
         set({ categories: catsData.map(c => ({ id: c.id, label: c.name })) });
       }
-      if (itemsData) {
+      
+      if (itemsData && itemsData.length > 0) {
         set({ 
           menuItems: itemsData.map(item => ({
             id: item.id,
@@ -122,7 +113,8 @@ export const useMenuStore = create((set, get) => ({
             image: item.image_url || 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=800&q=80',
             description: item.description || '',
             badges: item.is_recommended ? ['Recommended'] : [],
-            isSoldOut: item.is_sold_out,
+            isSoldOut: item.is_available === false || item.is_sold_out === true,
+            is_available: item.is_available ?? !item.is_sold_out,
             temperatureOptions: ['Ice', 'Hot'],
             sugarOptions: ['Normal', 'Less Sugar', 'No Sugar'],
             iceOptions: ['Normal Ice', 'Less Ice', 'No Ice'],
@@ -134,6 +126,4 @@ export const useMenuStore = create((set, get) => ({
       console.error("Silent fetch error:", e);
     }
   }
-
-  // Note: Add, update, delete functions are handled in Admin Dashboard components directly via Supabase.
 }));

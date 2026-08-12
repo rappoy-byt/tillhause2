@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase, isSupabaseConfigured } from '../../supabaseClient';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import { Clock, CheckCircle, RefreshCcw, XCircle, ArrowRight } from 'lucide-react';
 
 export default function AdminLiveOrders() {

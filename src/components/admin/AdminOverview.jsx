@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { TrendingUp, ShoppingCart, LayoutGrid, Award } from 'lucide-react';
-import { supabase, isSupabaseConfigured } from '../../supabaseClient';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 
 export default function AdminOverview() {
   const [stats, setStats] = useState({

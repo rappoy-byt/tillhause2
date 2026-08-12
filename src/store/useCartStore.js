@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { products, PROMO_CODES } from '../data/menuData';
-import { supabase, isSupabaseConfigured } from '../supabaseClient';
+import { supabase } from '../lib/supabase';
 
 export const useCartStore = create((set, get) => ({
   cart: [],

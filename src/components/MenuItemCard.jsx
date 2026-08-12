@@ -11,7 +11,7 @@ export default function MenuItemCard({ item, onSelectItem }) {
       style: 'currency',
       currency: 'IDR',
       maximumFractionDigits: 0
-    }).format(num);
+    }).format(num || 0);
   };
 
   const handleDecrement = (e) => {
@@ -24,22 +24,26 @@ export default function MenuItemCard({ item, onSelectItem }) {
     quickUpdateQuantity(item, 1);
   };
 
-  // Filter out unwanted badges like 'PAKET HEMAT' and 'BEST SELLER'
-  const displayBadge = item.badges?.find(b => b !== 'PAKET HEMAT' && b !== 'BEST SELLER');
+  // 1. Penyesuaian Status Sold Out dari Supabase (is_available)
+  const isSoldOut = item.is_available === false || Boolean(item.isSoldOut);
 
-  const isSoldOut = Boolean(item.isSoldOut);
+  // 2. Gambar produk dari Supabase (image_url) atau Gambar Default jika kosong
+  const imageUrl = item.image_url || item.image || 'https://via.placeholder.com/300?text=No+Image';
+
+  // Safe navigation jika badges belum diisi di Supabase
+  const displayBadge = item.badges?.find(b => b !== 'PAKET HEMAT' && b !== 'BEST SELLER');
 
   return (
     <div
-      onClick={() => !isSoldOut && onSelectItem(item)}
+      onClick={() => !isSoldOut && onSelectItem && onSelectItem(item)}
       className={`bg-white border rounded-2xl p-2.5 flex flex-col justify-between transition-all shadow-xs relative group ${
         isSoldOut ? 'border-slate-200 opacity-80 cursor-not-allowed bg-slate-50' : 'border-slate-200 hover:border-slate-300 cursor-pointer'
       }`}
     >
-      {/* Square Food Photo Container */}
+      {/* Container Foto Makanan */}
       <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-slate-100 mb-2">
         <img
-          src={item.image}
+          src={imageUrl}
           alt={item.name}
           className={`w-full h-full object-cover transition-transform duration-300 ${isSoldOut ? 'grayscale contrast-75' : 'group-hover:scale-105'}`}
           loading="lazy"
@@ -62,14 +66,14 @@ export default function MenuItemCard({ item, onSelectItem }) {
         )}
       </div>
 
-      {/* Product Information */}
+      {/* Informasi Produk */}
       <div className="flex-1 flex flex-col justify-between space-y-1.5">
         <div>
           <h3 className={`font-extrabold text-xs leading-snug line-clamp-2 uppercase ${isSoldOut ? 'text-slate-500 line-through' : 'text-slate-900'}`}>
             {item.name}
           </h3>
           <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">
-            {item.description}
+            {item.description || 'Tidak ada deskripsi'}
           </p>
         </div>
 
@@ -81,13 +85,13 @@ export default function MenuItemCard({ item, onSelectItem }) {
           </div>
         )}
 
-        {/* Pricing & Stepper Button */}
+        {/* Harga & Tombol Stepper */}
         <div className="space-y-1.5 pt-1.5 border-t border-slate-100">
           <div className={`font-black text-xs ${isSoldOut ? 'text-slate-400' : 'text-slate-900'}`}>
             {formatIDR(item.price)}
           </div>
 
-          {/* Full-width Tile Hause Orange Stepper or Sold Out Button */}
+          {/* Stepper / Tombol Status */}
           {isSoldOut ? (
             <button
               disabled
