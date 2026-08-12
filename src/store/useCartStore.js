@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { MENU_ITEMS, PROMO_CODES } from '../data/menuData';
+import { products, PROMO_CODES } from '../data/menuData';
+import { supabase, isSupabaseConfigured } from '../supabaseClient';
 
 export const useCartStore = create((set, get) => ({
   cart: [],
@@ -207,21 +208,67 @@ export const useCartStore = create((set, get) => ({
 
   getCrossSellSuggestions: () => {
     const cartItemIds = get().cart.map(c => c.item.id);
-    return MENU_ITEMS.filter(m => !cartItemIds.includes(m.id)).slice(0, 2);
+    return products.filter(m => !cartItemIds.includes(m.id)).slice(0, 2);
   },
 
-  checkoutOrder: (paymentMethod = 'QRIS') => {
+  checkoutOrder: async (paymentMethod = 'QRIS') => {
     const state = get();
     const now = new Date();
     const formattedDate = `${now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
 
-    const orderData = {
-      orderId: `NL-${Math.floor(100000 + Math.random() * 900000)}`,
+    const orderCode = `NL-${Math.floor(100000 + Math.random() * 900000)}`;
+    const totalAmount = state.getTotalPrice();
+
+    if (isSupabaseConfigured) {
+      try {
+        // 1. Insert into orders table
+        const { data: orderData, error: orderError } = await supabase
+          .from('orders')
+          .insert([{
+            order_code: orderCode,
+            customer_name: state.customerName || 'Pelanggan',
+            table_number: state.tableNumber || '-',
+            whatsapp_number: state.whatsappNumber || '',
+            total_amount: totalAmount,
+            payment_status: paymentMethod === 'Cash' ? 'Pending' : 'Pending', // Typically pending until verified by admin
+            order_status: 'Pending',
+          }])
+          .select('id')
+          .single();
+
+        if (orderError) throw orderError;
+
+        // 2. Insert into order_items table
+        const orderItemsPayload = state.cart.map(c => ({
+          order_id: orderData.id,
+          product_id: c.item.id,
+          quantity: c.quantity,
+          price_per_item: c.unitPrice,
+          subtotal: c.unitPrice * c.quantity,
+          notes: `${c.notes || ''} ${c.selectedTemp ? `(${c.selectedTemp}, ${c.selectedSugar}, ${c.selectedIce})` : ''}`.trim()
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('order_items')
+          .insert(orderItemsPayload);
+
+        if (itemsError) throw itemsError;
+
+      } catch (err) {
+        console.error('Error submitting order to Supabase:', err);
+        alert('Gagal mengirim pesanan. Silakan coba lagi.');
+        return;
+      }
+    }
+
+    // Regardless of Supabase, update UI state
+    const localOrderData = {
+      orderId: orderCode,
       customerName: state.customerName || 'Pelanggan',
       tableNumber: state.tableNumber || '-',
       whatsappNumber: state.whatsappNumber || '',
       items: [...state.cart],
-      total: state.getTotalPrice(),
+      total: totalAmount,
       paymentMethod,
       orderType: state.orderType,
       timestamp: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
@@ -229,7 +276,7 @@ export const useCartStore = create((set, get) => ({
     };
 
     set({
-      lastOrderData: orderData,
+      lastOrderData: localOrderData,
       isCartOpen: false,
       isQrisModalOpen: false,
       isOrderSuccess: true,

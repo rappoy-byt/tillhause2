@@ -1,99 +1,139 @@
 import { create } from 'zustand';
-import { MENU_ITEMS, CATEGORIES } from '../data/menuData';
-
-const STORAGE_KEY = 'tilehause_custom_menu_v1';
-
-// Load initial menu items from localStorage safely, merged with default MENU_ITEMS
-const getInitialMenu = () => {
-  try {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const isValid = parsed.every(i => i && typeof i === 'object' && i.id && i.name && i.category);
-          if (isValid) {
-            const existingIds = new Set(parsed.map(i => i.id));
-            const missingDefaults = MENU_ITEMS.filter(d => !existingIds.has(d.id));
-            return [...parsed, ...missingDefaults];
-          }
-        }
-      }
-    }
-  } catch (e) {
-    console.error("Failed to parse saved menu, using default:", e);
-  }
-  return MENU_ITEMS;
-};
+import { supabase, isSupabaseConfigured } from '../supabaseClient';
+import { products as FALLBACK_MENU, CATEGORIES as FALLBACK_CATS } from '../data/menuData';
 
 export const useMenuStore = create((set, get) => ({
-  menuItems: getInitialMenu(),
-  categories: CATEGORIES,
-  isLoading: false,
+  menuItems: [],
+  categories: [],
+  isLoading: true,
+  error: null,
 
-  // Save local state to localStorage
-  saveToLocalStorage: (items) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  initRealtimeMenu: async () => {
+    set({ isLoading: true, error: null });
+
+    if (!isSupabaseConfigured) {
+      // Fallback if no Supabase configured
+      set({ 
+        menuItems: FALLBACK_MENU, 
+        categories: FALLBACK_CATS,
+        isLoading: false 
+      });
+      return;
+    }
+
+    try {
+      // 1. Fetch Categories
+      const { data: catsData, error: catsError } = await supabase
+        .from('categories')
+        .select('*')
+        .order('display_order', { ascending: true });
+
+      if (catsError) throw catsError;
+
+      // Map to the format used in frontend (id, label)
+      const mappedCats = catsData.map(c => ({
+        id: c.id, // we might need to map ID to string or keep UUID. If uuid, we need to ensure activeCategory matches. 
+        // Wait, the frontend uses string IDs like 'hot-beverages'. 
+        // Let's assume the admin can set names. We'll map label to name.
+        // For compatibility with frontend activeCategory, we'll use a slugified name for id if needed, or just use the UUID.
+        // Let's use the DB id as the actual id, but label as name.
+        id: c.id,
+        label: c.name
+      }));
+
+      // 2. Fetch Menu Items
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('products')
+        .select('*');
+
+      if (itemsError) throw itemsError;
+
+      // Map to the format used in frontend
+      const mappedItems = itemsData.map(item => ({
+        id: item.id,
+        name: item.name,
+        category: item.category_id, // Map category_id to category
+        price: Number(item.price),
+        image: item.image_url || 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=800&q=80',
+        description: item.description || '',
+        badges: item.is_recommended ? ['Recommended'] : [],
+        isSoldOut: item.is_sold_out,
+        // Default options for coffee shop app compatibility
+        temperatureOptions: ['Ice', 'Hot'],
+        sugarOptions: ['Normal', 'Less Sugar', 'No Sugar'],
+        iceOptions: ['Normal Ice', 'Less Ice', 'No Ice'],
+        toppingOptions: []
+      }));
+
+      // Set initial data
+      set({ 
+        categories: mappedCats.length > 0 ? mappedCats : FALLBACK_CATS, 
+        menuItems: mappedItems.length > 0 ? mappedItems : FALLBACK_MENU, 
+        isLoading: false 
+      });
+
+      // 3. Setup Realtime Subscriptions
+      // Subscribe to products changes
+      const menuSub = supabase
+        .channel('public:products')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, payload => {
+          get().fetchMenuDataSilently(); // Re-fetch all to keep it simple, or update specific item
+        })
+        .subscribe();
+
+      // Subscribe to categories changes
+      const catSub = supabase
+        .channel('public:categories')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, payload => {
+          get().fetchMenuDataSilently();
+        })
+        .subscribe();
+
+      // We technically should save the subscription to remove it later, but Zustand stores are global.
+    } catch (err) {
+      console.error("Error fetching menu from Supabase:", err);
+      // Fallback
+      set({ 
+        menuItems: FALLBACK_MENU, 
+        categories: FALLBACK_CATS,
+        error: err.message,
+        isLoading: false 
+      });
     }
   },
 
-  // No-op for backward compatibility
-  initRealtimeMenu: () => { },
-
-  // Add new menu item
-  addMenuItem: (newItemData) => {
-    const newId = `menu-${Date.now()}`;
-    const newItem = {
-      id: newId,
-      name: newItemData.name || 'Menu Baru',
-      category: newItemData.category || 'hot-beverages',
-      price: Number(newItemData.price) || 0,
-      image: newItemData.image || 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=800&q=80',
-      description: newItemData.description || '',
-      badges: newItemData.badges || [],
-      isSoldOut: Boolean(newItemData.isSoldOut),
-      temperatureOptions: newItemData.temperatureOptions || ['Ice', 'Hot'],
-      sugarOptions: newItemData.sugarOptions || ['Normal', 'Less Sugar', 'No Sugar'],
-      iceOptions: newItemData.iceOptions || ['Normal Ice', 'Less Ice', 'No Ice'],
-      toppingOptions: newItemData.toppingOptions || []
-    };
-
-    const updated = [newItem, ...get().menuItems];
-    set({ menuItems: updated });
-    get().saveToLocalStorage(updated);
-  },
-
-  // Update existing menu item
-  updateMenuItem: (id, updatedFields) => {
-    const currentItems = get().menuItems;
-    const updated = currentItems.map(item => item.id === id ? { ...item, ...updatedFields } : item);
-    set({ menuItems: updated });
-    get().saveToLocalStorage(updated);
-  },
-
-  // Toggle Sold Out status
-  toggleSoldOut: (id) => {
-    const item = get().menuItems.find(m => m.id === id);
-    if (!item) return;
-
-    const newSoldOut = !item.isSoldOut;
-    get().updateMenuItem(id, { isSoldOut: newSoldOut });
-  },
-
-  // Delete menu item
-  deleteMenuItem: (id) => {
-    const updated = get().menuItems.filter(item => item.id !== id);
-    set({ menuItems: updated });
-    get().saveToLocalStorage(updated);
-  },
-
-  // Add new Category dynamically
-  addCategory: (newCategory) => {
-    if (!newCategory.id || !newCategory.label) return;
-    const currentCats = get().categories;
-    if (!currentCats.some(c => c.id === newCategory.id)) {
-      set({ categories: [...currentCats, newCategory] });
+  // Helper to re-fetch without showing loading spinner
+  fetchMenuDataSilently: async () => {
+    if (!isSupabaseConfigured) return;
+    try {
+      const { data: catsData } = await supabase.from('categories').select('*').order('display_order', { ascending: true });
+      const { data: itemsData } = await supabase.from('products').select('*');
+      
+      if (catsData) {
+        set({ categories: catsData.map(c => ({ id: c.id, label: c.name })) });
+      }
+      if (itemsData) {
+        set({ 
+          menuItems: itemsData.map(item => ({
+            id: item.id,
+            name: item.name,
+            category: item.category_id,
+            price: Number(item.price),
+            image: item.image_url || 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&w=800&q=80',
+            description: item.description || '',
+            badges: item.is_recommended ? ['Recommended'] : [],
+            isSoldOut: item.is_sold_out,
+            temperatureOptions: ['Ice', 'Hot'],
+            sugarOptions: ['Normal', 'Less Sugar', 'No Sugar'],
+            iceOptions: ['Normal Ice', 'Less Ice', 'No Ice'],
+            toppingOptions: []
+          }))
+        });
+      }
+    } catch (e) {
+      console.error("Silent fetch error:", e);
     }
   }
+
+  // Note: Add, update, delete functions are handled in Admin Dashboard components directly via Supabase.
 }));

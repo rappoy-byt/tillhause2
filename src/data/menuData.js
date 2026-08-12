@@ -11,7 +11,7 @@ export const CATEGORIES = [
   { id: 'weekend-menu', label: 'WEEKEND MENU' },
 ];
 
-export const MENU_ITEMS = [
+export const products = [
   // ==========================================
   // KATEGORI 1: BEVERAGES (HOT & ICE IN 1 ITEM)
   // ==========================================

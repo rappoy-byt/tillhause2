@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MENU_ITEMS } from '../data/menuData';
+import { products } from '../data/menuData';
 
 export default function DynamicBanner({ onSelectItem }) {
   const [activeSlide, setActiveSlide] = useState(0);
@@ -12,7 +12,7 @@ export default function DynamicBanner({ onSelectItem }) {
       subtitle: 'Susu dingin kental manis berlapis espresso panas pekat murni khas Tile Hause',
       price: 36000,
       badge: 'BEST SELLER',
-      item: MENU_ITEMS.find(i => i.name === 'Dirty Latte') || MENU_ITEMS[0],
+      item: products.find(i => i.name === 'Dirty Latte') || products[0],
       image: 'https://images.unsplash.com/photo-1589396575653-c09c794ff6a6?auto=format&fit=crop&w=1000&q=80'
     },
     {
@@ -21,7 +21,7 @@ export default function DynamicBanner({ onSelectItem }) {
       subtitle: 'Daging ayam crispy saus teriyaki gurih manis bertabur wijen',
       price: 30000,
       badge: 'CHEF RECOMMEND',
-      item: MENU_ITEMS.find(i => i.name === 'Chicken Teriyaki') || MENU_ITEMS[1],
+      item: products.find(i => i.name === 'Chicken Teriyaki') || products[1],
       image: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=1000&q=80'
     },
     {
@@ -30,7 +30,7 @@ export default function DynamicBanner({ onSelectItem }) {
       subtitle: 'Ceremonial matcha grade tertinggi diseduh dengan susu segar kaya umami',
       price: 35000,
       badge: 'CEREMONIAL GRADE',
-      item: MENU_ITEMS.find(i => i.name === 'Ceremonial Matcha') || MENU_ITEMS[2],
+      item: products.find(i => i.name === 'Ceremonial Matcha') || products[2],
       image: 'https://images.unsplash.com/photo-1515823689205-d368819d9b6c?auto=format&fit=crop&w=1000&q=80'
     }
   ];

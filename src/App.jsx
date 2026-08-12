@@ -9,6 +9,7 @@ import CartDrawer from './components/CartDrawer';
 import QrisPaymentModal from './components/QrisPaymentModal';
 import OrderSuccessModal from './components/OrderSuccessModal';
 import AdminQrPage from './components/AdminQrPage';
+import AdminDashboard from './components/AdminDashboard'; // Import AdminDashboard
 import { useCartStore } from './store/useCartStore';
 import { useMenuStore } from './store/useMenuStore';
 import { SearchX, Flame } from 'lucide-react';
@@ -23,6 +24,14 @@ export default function App() {
   const [isQrStandeePage, setIsQrStandeePage] = useState(() => {
     if (typeof window !== 'undefined') {
       return window.location.pathname === '/qr-standee' || window.location.search.includes('page=qr-standee');
+    }
+    return false;
+  });
+
+  // Dedicated route check for Admin Dashboard (/admin or ?page=admin)
+  const [isAdminPage, setIsAdminPage] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.location.pathname === '/admin' || window.location.search.includes('page=admin');
     }
     return false;
   });
@@ -45,6 +54,14 @@ export default function App() {
     return <AdminQrPage onBackToApp={() => {
       window.history.pushState({}, '', '/');
       setIsQrStandeePage(false);
+    }} />;
+  }
+
+  // If opening Admin Dashboard
+  if (isAdminPage) {
+    return <AdminDashboard onBackToApp={() => {
+      window.history.pushState({}, '', '/');
+      setIsAdminPage(false);
     }} />;
   }
 
@@ -134,6 +151,16 @@ export default function App() {
         <footer className="mt-8 px-4 text-center py-6 border-t border-slate-200 text-slate-500 text-xs space-y-1">
           <p className="font-extrabold text-slate-700">Tile Hause</p>
           <p className="text-[10px] text-slate-400">Purwokerto • Direct Table Ordering</p>
+          {/* Quick link to Admin for convenience */}
+          <button 
+            onClick={() => {
+              window.history.pushState({}, '', '/admin');
+              setIsAdminPage(true);
+            }} 
+            className="text-[10px] text-slate-300 hover:text-slate-500 mt-2 underline"
+          >
+            Admin Login
+          </button>
         </footer>
 
         {/* Item Detail Modal */}
