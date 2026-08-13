@@ -8,20 +8,22 @@ import {
   LogOut,
   Menu as MenuIcon,
   X,
-  ArrowLeft
+  ArrowLeft,
+  QrCode
 } from 'lucide-react';
 
 import AdminOverview from './admin/AdminOverview';
 import AdminLiveOrders from './admin/AdminLiveOrders';
 import AdminMenuManager from './admin/AdminMenuManager';
 import AdminReports from './admin/AdminReports';
+import AdminTableQR from './admin/AdminTableQR';
 import AdminProtectedRoute from './admin/AdminProtectedRoute';
 import { logoutAdmin } from '../lib/api';
 
 export default function AdminDashboard({ onBackToApp }) {
   // Active Main Tab: 'overview' | 'orders' | 'menu' | 'reports'
   const [activeTab, setActiveTab] = useState('overview');
-  
+
   // Mobile Nav Drawer Toggle
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
@@ -40,6 +42,7 @@ export default function AdminDashboard({ onBackToApp }) {
     { id: 'orders', label: 'Live Orders', icon: Receipt },
     { id: 'menu', label: 'Menu & Kategori', icon: Utensils },
     { id: 'reports', label: 'Laporan Penjualan', icon: BarChart3 },
+    { id: 'qr', label: 'QR Meja', icon: QrCode },
   ];
 
   // Seluruh tampilan Sidebar dan Konten dibungkus oleh AdminProtectedRoute
@@ -71,11 +74,10 @@ export default function AdminDashboard({ onBackToApp }) {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-extrabold text-xs transition-all ${
-                    activeTab === item.id
+                  className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-extrabold text-xs transition-all ${activeTab === item.id
                       ? 'bg-white text-zinc-950 shadow-md'
                       : 'text-zinc-400 hover:text-white hover:bg-zinc-800/60'
-                  }`}
+                    }`}
                 >
                   <item.icon className="w-4 h-4" />
                   <span>{item.label}</span>
@@ -137,9 +139,8 @@ export default function AdminDashboard({ onBackToApp }) {
                   <button
                     key={item.id}
                     onClick={() => { setActiveTab(item.id); setIsMobileNavOpen(false); }}
-                    className={`w-full flex items-center gap-3 p-2.5 rounded-xl ${
-                      activeTab === item.id ? 'bg-white text-zinc-950 font-black' : 'text-zinc-300'
-                    }`}
+                    className={`w-full flex items-center gap-3 p-2.5 rounded-xl ${activeTab === item.id ? 'bg-white text-zinc-950 font-black' : 'text-zinc-300'
+                      }`}
                   >
                     <item.icon className="w-4 h-4" />
                     <span>{item.label}</span>
@@ -162,6 +163,7 @@ export default function AdminDashboard({ onBackToApp }) {
             {activeTab === 'orders' && <AdminLiveOrders />}
             {activeTab === 'menu' && <AdminMenuManager />}
             {activeTab === 'reports' && <AdminReports />}
+            {activeTab === 'qr' && <AdminTableQR />}
           </main>
         </div>
       </div>

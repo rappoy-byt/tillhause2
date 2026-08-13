@@ -11,7 +11,7 @@ export default function AdminLiveOrders() {
       setLoading(false);
       return;
     }
-    
+
     fetchOrders();
 
     // Subscribe to realtime orders changes
@@ -173,11 +173,10 @@ export default function AdminLiveOrders() {
                     <select
                       value={order.payment_status}
                       onChange={(e) => updatePaymentStatus(order.id, e.target.value)}
-                      className={`w-full text-xs font-bold p-1.5 rounded-lg outline-none cursor-pointer border ${
-                        order.payment_status === 'Paid' ? 'bg-emerald-950/30 border-emerald-800/60 text-emerald-400' :
-                        order.payment_status === 'Pending' ? 'bg-amber-950/30 border-amber-800/60 text-amber-400' :
-                        'bg-rose-950/30 border-rose-800/60 text-rose-400'
-                      }`}
+                      className={`w-full text-xs font-bold p-1.5 rounded-lg outline-none cursor-pointer border ${order.payment_status === 'Paid' ? 'bg-emerald-950/30 border-emerald-800/60 text-emerald-400' :
+                          order.payment_status === 'Pending' ? 'bg-amber-950/30 border-amber-800/60 text-amber-400' :
+                            'bg-rose-950/30 border-rose-800/60 text-rose-400'
+                        }`}
                     >
                       <option value="Pending" className="bg-zinc-900 text-amber-400">Pending</option>
                       <option value="Paid" className="bg-zinc-900 text-emerald-400">Paid</option>
@@ -189,12 +188,11 @@ export default function AdminLiveOrders() {
                     <select
                       value={order.order_status}
                       onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                      className={`w-full text-xs font-bold p-1.5 rounded-lg outline-none cursor-pointer border ${
-                        order.order_status === 'Completed' ? 'bg-emerald-950/30 border-emerald-800/60 text-emerald-400' :
-                        order.order_status === 'Processing' ? 'bg-blue-950/30 border-blue-800/60 text-blue-400' :
-                        order.order_status === 'Cancelled' ? 'bg-rose-950/30 border-rose-800/60 text-rose-400' :
-                        'bg-zinc-800 border-zinc-700 text-zinc-300'
-                      }`}
+                      className={`w-full text-xs font-bold p-1.5 rounded-lg outline-none cursor-pointer border ${order.order_status === 'Completed' ? 'bg-emerald-950/30 border-emerald-800/60 text-emerald-400' :
+                          order.order_status === 'Processing' ? 'bg-blue-950/30 border-blue-800/60 text-blue-400' :
+                            order.order_status === 'Cancelled' ? 'bg-rose-950/30 border-rose-800/60 text-rose-400' :
+                              'bg-zinc-800 border-zinc-700 text-zinc-300'
+                        }`}
                     >
                       <option value="Pending" className="bg-zinc-900 text-zinc-300">Pending</option>
                       <option value="Processing" className="bg-zinc-900 text-blue-400">Processing</option>
