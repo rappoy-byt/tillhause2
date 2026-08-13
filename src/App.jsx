@@ -17,7 +17,7 @@ import { SearchX, Flame } from 'lucide-react';
 export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [activeCategory, setActiveCategory] = useState('beverages');
+  const [activeCategory, setActiveCategory] = useState('');
   const [selectedModalItem, setSelectedModalItem] = useState(null);
 
   // Dedicated route check for QR Standee Generator page (/qr-standee or ?page=qr-standee)
@@ -42,6 +42,16 @@ export default function App() {
   useEffect(() => {
     initRealtimeMenu();
   }, [initRealtimeMenu]);
+
+  // Set default active category to the first available category in the list
+  useEffect(() => {
+    if (categories && categories.length > 0) {
+      setActiveCategory((prev) => {
+        const exists = categories.some((c) => c && c.id === prev);
+        return exists ? prev : categories[0].id;
+      });
+    }
+  }, [categories]);
 
   const { initTableFromUrl } = useCartStore();
 
@@ -137,7 +147,9 @@ export default function App() {
               <button
                 onClick={() => {
                   setSearchQuery('');
-                  setActiveCategory('beverages');
+                  if (categories && categories.length > 0) {
+                    setActiveCategory(categories[0].id);
+                  }
                 }}
                 className="text-xs font-bold text-slate-800 hover:underline"
               >
